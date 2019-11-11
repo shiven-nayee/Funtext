@@ -45,23 +45,48 @@ const createUser = (request, response) => {
       if(error) {
         throw error;
       }
-      console.log(`Added Number: ${number}`);
+      const client = require('twilio')(config.accountSid,config.authToken)
+
+      // Twilio API Call
+      client.api.messages
+        .create({
+          body: "You are now subscribed to funtext",
+          to: number,
+          from: config.sendingNumber
+        }).then((data) => {
+          console.log(`Added Number: ${number}`);
+        })
       response.status(201).send(twiml.toString(`Added Number: ${number}`));
       })
     } else if(message === 'unsubscribe') {
       pool.query('DELETE FROM phone_numbers WHERE number = $1', [number], (error, results) => {
-        console.log(`${number} unsubscribed`);
-        response.status(202).send(twiml.toString(`Number: ${number} already exists`));
-      });
+        const client = require('twilio')(config.accountSid,config.authToken)
+        // Twilio API Call
+        client.api.messages
+          .create({
+            body: "You are now unsubscribed to funtext",
+            to: number,
+            from: config.sendingNumber
+          }).then((data) => {
+            console.log(`${number} unsubscribed`);
+          })
+          response.status(202).send(twiml.toString(`Number: ${number} already exists`));
+        });
     } else {
-      console.log(`Number: ${number} already exists`);
+      const client = require('twilio')(config.accountSid,config.authToken)
+
+      // Twilio API Call
+      client.api.messages
+        .create({
+          body: "You are already subscribed to Funtext",
+          to: number,
+          from: config.sendingNumber
+        }).then((data) => {
+          console.log(`Number: ${number} already exists`);
+        })
       response.status(200).send(twiml.toString(`Number: ${number} already exists`));
     }
   })
-}
-
-async function getIMG() {
-  
 }
 
 const getURL = (request, response) => {
@@ -93,7 +118,6 @@ const textAll = (request, response) => {
     console.log(results.rows)
 
     results.rows.forEach((person) => {
-      console.log(person.number)
       const client = require('twilio')(config.accountSid,config.authToken)
       client.api.messages
         .create({
