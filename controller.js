@@ -78,17 +78,19 @@ const createUser = (request, response) => {
       // Twilio API Call
       client.api.messages
         .create({
-          body: "You are already subscribed to Funtext",
+          body: "You are already subscribed to Funtext, you will receieve a text in the morning at 9 AM. Text unsubscribe to stop.",
           to: number,
           from: config.sendingNumber
         }).then((data) => {
           console.log(`Number: ${number} already exists`);
         })
+      // Response must be sent in the form of twiml format otherwise it raises an error on the Twilio API
       response.status(200).send(twiml.toString(`Number: ${number} already exists`));
     }
   })
 }
 
+// API Call for sending Images
 const getURL = (request, response) => {
     let imageOfTheDay = '';
     let finalPath = '';
@@ -98,14 +100,13 @@ const getURL = (request, response) => {
     let directoryPath = `images/${month}/${day}`;
   
     fs.readdir(directoryPath,(error,dir) => {
-      console.log(dir)
       for(const img of dir) {
         if(img.includes('.jpg') || img.includes('.png')) {
           imageOfTheDay = `images/${month}/${day}/${img}`;
           finalPath = path.join(__dirname, imageOfTheDay)
       }
     }
-    console.log(imageOfTheDay)
+    // Express only accepts Absolute paths
     response.status(200).sendFile(finalPath)
   })
 }
@@ -115,46 +116,29 @@ const textAll = (request, response) => {
     if (error) {
       throw error
     }
-    console.log(results.rows)
 
     results.rows.forEach((person) => {
       const client = require('twilio')(config.accountSid,config.authToken)
       client.api.messages
         .create({
-          body: "TEST",
-          mediaUrl: ['http://97610877.ngrok.io/getURL'],
+          body: "Text unsubscribe to stop.",
+          mediaUrl: ['http://localhost:1289/getURL'],
           to: person.number,
           from: config.sendingNumber
         }).then((data) => {
           console.log(`${person.number} texted`)
         }).catch((err) => {
-          console.log('Administrator could not be notified')
+          console.log(`${person.number} could not be texted`)
           console.log(err)
         });
     })
-    response.status(200)
+    response.status(200).send("Sent text Messages")
   })
-}
-
-const sms = (request, response) => {
-  // Being creating the message
-  const twiml = new MessagingResponse()
-
-  // Text message
-  const msg = twiml.message('YEET')
-
-  // Multimedia Message
-  msg.media('https://external-preview.redd.it/LCP7CiYJArZmiLjLisnuZi5UaT26lIDXseXuldfcY00.jpg?auto=webp&s=012b0bc88dade2d008dda364fbc46b4680a93f7a')
-
-  // Server response and send via twilio
-  response.writeHead(200, {'Content-type': 'text/xml'})
-  response.end(twiml.toString())
 }
 
 module.exports = {
   getUsers,
   createUser,
-  sms,
   textAll,
   getURL
 }
