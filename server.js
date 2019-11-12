@@ -23,7 +23,7 @@ app.post('/sms', controller.createUser)
 // Node Scheduler
 // Schedule parameter Second / Minute / Hour / Day of Month / Month / Day of Week
 // Make sure to set 'Second' parameter otherwise it will continue to run for the whole minute
-const morningText = schedule.scheduleJob('00 00 9 * * *', () => {
+const morningText = schedule.scheduleJob('0 0 9 * * *', () => {
   http.get('http://localhost:1289/textAll')
 })
 

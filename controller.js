@@ -119,10 +119,13 @@ const textAll = (request, response) => {
 
     results.rows.forEach((person) => {
       const client = require('twilio')(config.accountSid,config.authToken)
+
+      // mediaUrl must be a URL, does not accept local paths
+      // Localhost, 127.0.0.1 are prohibited by Twilio API
       client.api.messages
         .create({
           body: "Text unsubscribe to stop.",
-          mediaUrl: ['http://localhost:1289/getURL'],
+          mediaUrl: ['http://40.87.61.103:1289/getURL'],
           to: person.number,
           from: config.sendingNumber
         }).then((data) => {
