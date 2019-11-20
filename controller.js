@@ -24,14 +24,55 @@ const getUsers = (request, response) => {
   })
 }
 
+const addNumber = (request, response) => {
+  let number = request.body.number
+  let twiml = new MessagingResponse;
+  pool.query('SELECT * FROM phone_numbers WHERE number = $1', [number], (error, results) => {
+    if(error) {
+      throw error;
+    }
+
+    // Adds number if it doesn't exist in the database
+    if(results.rows == 0) {
+      pool.query('INSERT INTO phone_numbers (number, text) VALUES ($1, $2)', [number, true], (error, results) => {
+        if(error) {
+          throw error;
+        }
+      const client = require('twilio')(config.accountSid,config.authToken);
+      // Twilio API Call
+      client.api.messages
+        .create({
+          body: "You are now subscribed to funtext",
+          to: number,
+          from: config.sendingNumber
+        }).then((data) => {
+          console.log(`Added Number: ${number}`);
+        })
+      response.status(201).send(twiml.toString(`Added Number: ${number}`));
+      })
+    } else {
+      const client = require('twilio')(config.accountSid,config.authToken)
+
+      // Twilio API Call
+      client.api.messages
+        .create({
+          body: "You are already subscribed to Funtext, you will receieve a text in the morning at 9 AM. Text unsubscribe to stop.",
+          to: number,
+          from: config.sendingNumber
+        }).then((data) => {
+          console.log(`Number: ${number} already exists`);
+        })
+    }
+  })
+  response.status(201).json("ok");
+}
+
 const createUser = (request, response) => {
   // Get number from twilio request
   const number = request.body.From;
   let message = request.body.Body;
   let twiml = new MessagingResponse;
   message = message.toLowerCase().trim();
-  console.log(number);
-  console.log(message);
 
   // Check if number exists already
   pool.query('SELECT * FROM phone_numbers WHERE number = $1', [number], (error, results) => {
@@ -122,10 +163,12 @@ const textAll = (request, response) => {
 
       // mediaUrl must be a URL, does not accept local paths
       // Localhost, 127.0.0.1 are prohibited by Twilio API
+      // Create a random number so Twilio API doesn't cache image files and deliver old images
+      let randomnum = Math.floor((Math.random() * 1000000) + 1); 
       client.api.messages
         .create({
           body: "Text unsubscribe to stop.",
-          mediaUrl: ['http://40.87.61.103:1289/getURL'],
+          mediaUrl: [`http://40.87.61.103:1289/getURL/${randomnum}`],
           to: person.number,
           from: config.sendingNumber
         }).then((data) => {
@@ -142,6 +185,7 @@ const textAll = (request, response) => {
 module.exports = {
   getUsers,
   createUser,
+  addNumber,
   textAll,
   getURL
 }
